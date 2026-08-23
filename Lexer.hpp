@@ -1,11 +1,14 @@
 #pragma once
+
 #include "Token.hpp"
+
 #include <string>
 #include <vector>
 
 class Lexer {
 public:
     explicit Lexer(std::string source);
+
     std::vector<Token> tokenize();
     const std::vector<std::string>& errors() const;
 
@@ -20,9 +23,11 @@ private:
     bool isAtEnd() const;
     char current() const;
     char peek() const;
+    char peekNext() const;
     char advance();
     bool match(char expected);
 
     void addToken(TokenType type, const std::string& lexeme, int line, int column);
+    void addSimpleToken(TokenType type);
     void addError(const std::string& message, int line, int column);
 };
