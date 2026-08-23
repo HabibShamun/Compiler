@@ -55,6 +55,17 @@ bool Parser::match(TokenType type) {
     return true;
 }
 
+bool Parser::matchAny(std::initializer_list<TokenType> types) {
+    for (const TokenType type : types) {
+        if (check(type)) {
+            advance();
+            return true;
+        }
+    }
+
+    return false;
+}
+
 const Token& Parser::advance() {
     if (!isAtEnd()) {
         ++pos_;
@@ -81,7 +92,7 @@ void Parser::errorAt(const Token& token, const std::string& message) {
 
 void Parser::synchronize() {
     while (!isAtEnd()) {
-        if (match(TokenType::Semicolon) || match(TokenType::Newline)) {
+        if (matchAny({TokenType::Semicolon, TokenType::Newline})) {
             return;
         }
         advance();
@@ -89,12 +100,12 @@ void Parser::synchronize() {
 }
 
 void Parser::consumeTerminators() {
-    while (match(TokenType::Semicolon) || match(TokenType::Newline)) {
+    while (matchAny({TokenType::Semicolon, TokenType::Newline})) {
     }
 }
 
 void Parser::consumeStatementEnd(const std::string& context) {
-    if (match(TokenType::Semicolon) || match(TokenType::Newline)) {
+    if (matchAny({TokenType::Semicolon, TokenType::Newline})) {
         consumeTerminators();
         return;
     }
@@ -158,6 +169,67 @@ StmtPtr Parser::parsePrint() {
 }
 
 ExprPtr Parser::parseExpression() {
+    return parseEquality();
+}
+
+ExprPtr Parser::parseEquality() {
+    ExprPtr expr = parseComparison();
+
+    while (matchAny({TokenType::EqualEqual, TokenType::BangEqual})) {
+        const Token op = previous();
+        ExprPtr right = parseComparison();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), binaryOpFromToken(op.type),
+                                            std::move(right), op.line);
+    }
+
+    return expr;
+}
+
+ExprPtr Parser::parseComparison() {
+    ExprPtr expr = parseTerm();
+
+    while (matchAny({TokenType::Less, TokenType::LessEqual, TokenType::Greater, TokenType::GreaterEqual})) {
+        const Token op = previous();
+        ExprPtr right = parseTerm();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), binaryOpFromToken(op.type),
+                                            std::move(right), op.line);
+    }
+
+    return expr;
+}
+
+ExprPtr Parser::parseTerm() {
+    ExprPtr expr = parseFactor();
+
+    while (matchAny({TokenType::Plus, TokenType::Minus})) {
+        const Token op = previous();
+        ExprPtr right = parseFactor();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), binaryOpFromToken(op.type),
+                                            std::move(right), op.line);
+    }
+
+    return expr;
+}
+
+ExprPtr Parser::parseFactor() {
+    ExprPtr expr = parseUnary();
+
+    while (matchAny({TokenType::Star, TokenType::Slash})) {
+        const Token op = previous();
+        ExprPtr right = parseUnary();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), binaryOpFromToken(op.type),
+                                            std::move(right), op.line);
+    }
+
+    return expr;
+}
+
+ExprPtr Parser::parseUnary() {
+    if (match(TokenType::Minus)) {
+        const Token op = previous();
+        return std::make_unique<UnaryExpr>("-", parseUnary(), op.line);
+    }
+
     return parsePrimary();
 }
 
@@ -177,7 +249,13 @@ ExprPtr Parser::parsePrimary() {
         return std::make_unique<VariableExpr>(token.lexeme, token.line);
     }
 
-    errorAt(current(), "Expected number, string, or variable name");
+    if (match(TokenType::LParen)) {
+        ExprPtr expr = parseExpression();
+        expect(TokenType::RParen, "Expected ')' after expression");
+        return expr;
+    }
+
+    errorAt(current(), "Expected expression");
     throw ParseError("expected expression");
 }
 
@@ -195,5 +273,21 @@ ValueType Parser::typeFromToken(TokenType type) {
     }
 
     return ValueType::Unknown;
+}
+
+BinaryOp Parser::binaryOpFromToken(TokenType type) {
+    switch (type) {
+        case TokenType::Plus: return BinaryOp::Add;
+        case TokenType::Minus: return BinaryOp::Subtract;
+        case TokenType::Star: return BinaryOp::Multiply;
+        case TokenType::Slash: return BinaryOp::Divide;
+        case TokenType::EqualEqual: return BinaryOp::Equal;
+        case TokenType::BangEqual: return BinaryOp::NotEqual;
+        case TokenType::Less: return BinaryOp::Less;
+        case TokenType::LessEqual: return BinaryOp::LessEqual;
+        case TokenType::Greater: return BinaryOp::Greater;
+        case TokenType::GreaterEqual: return BinaryOp::GreaterEqual;
+        default: return BinaryOp::Equal;
+    }
 }
 

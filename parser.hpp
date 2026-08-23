@@ -3,6 +3,7 @@
 #include "AST.hpp"
 #include "Token.hpp"
 
+#include <initializer_list>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -28,6 +29,7 @@ private:
     bool isAtEnd() const;
     bool check(TokenType type) const;
     bool match(TokenType type);
+    bool matchAny(std::initializer_list<TokenType> types);
     const Token& advance();
     const Token& expect(TokenType type, const std::string& message);
 
@@ -43,9 +45,15 @@ private:
     StmtPtr parsePrint();
 
     ExprPtr parseExpression();
+    ExprPtr parseEquality();
+    ExprPtr parseComparison();
+    ExprPtr parseTerm();
+    ExprPtr parseFactor();
+    ExprPtr parseUnary();
     ExprPtr parsePrimary();
 
     static bool isTypeToken(TokenType type);
     static ValueType typeFromToken(TokenType type);
+    static BinaryOp binaryOpFromToken(TokenType type);
 };
 
