@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+
 SymbolTable::SymbolTable() {
     enterScope();
 }
@@ -44,4 +45,18 @@ bool SymbolTable::existsInCurrentScope(const std::string& name) const {
 
 const std::vector<Symbol>& SymbolTable::declarations() const {
     return declarations_;
+}
+
+const std::vector<std::string>& SemanticAnalyzer::errors() const {
+    return errors_;
+}
+
+const SymbolTable& SemanticAnalyzer::symbols() const {
+    return symbols_;
+}
+
+void SemanticAnalyzer::addError(int line, const std::string& message) {
+    std::ostringstream out;
+    out << "Line " << line << ": " << message;
+    errors_.push_back(out.str());
 }

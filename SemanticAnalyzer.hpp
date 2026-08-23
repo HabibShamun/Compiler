@@ -30,3 +30,17 @@ private:
     std::vector<std::unordered_map<std::string, Symbol>> scopes_;
     std::vector<Symbol> declarations_;
 };
+
+class SemanticAnalyzer {                                  
+public:
+    void analyze(const Program& program);                 
+
+    const std::vector<std::string>& errors() const;       
+    const SymbolTable& symbols() const;                    
+
+private:
+    SymbolTable symbols_;                                   
+    std::vector<std::string> errors_;                       
+
+    void addError(int line, const std::string& message);   
+};
