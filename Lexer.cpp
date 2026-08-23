@@ -61,6 +61,8 @@ std::vector<Token> Lexer::tokenize() {
             addSimpleToken(TokenType::RBrace);
         } else if (ch == ';') {
             addSimpleToken(TokenType::Semicolon);
+        } else if (ch == '"') {
+            readString();
         } else if (std::isdigit(static_cast<unsigned char>(ch))) {
             readNumber();
         } else {
@@ -152,4 +154,46 @@ void Lexer::readNumber() {
     }
 
     addToken(TokenType::Number, source_.substr(start, pos_ - start), line, column);
+}
+
+void Lexer::readString() {
+    const int line = line_;
+    const int column = column_;
+    advance();
+
+    std::string value;
+    while (!isAtEnd() && current() != '"') {
+        if (current() == '\n') {
+            addError("Unterminated string literal", line, column);
+            return;
+        }
+
+        if (current() == '\\') {
+            advance();
+            if (isAtEnd()) {
+                addError("Unterminated string escape", line_, column_);
+                return;
+            }
+
+            const char escaped = advance();
+            switch (escaped) {
+                case 'n': value += '\n'; break;
+                case '"': value += '"'; break;
+                case '\\': value += '\\'; break;
+                default:
+                    value += escaped;
+                    break;
+            }
+        } else {
+            value += advance();
+        }
+    }
+
+    if (isAtEnd()) {
+        addError("Unterminated string literal", line, column);
+        return;
+    }
+
+    advance();
+    addToken(TokenType::String, value, line, column);
 }

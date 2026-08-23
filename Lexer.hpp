@@ -32,4 +32,5 @@ private:
     void addError(const std::string& message, int line, int column);
 
     void readNumber();
+    void readString();
 };
