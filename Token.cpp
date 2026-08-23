@@ -1,11 +1,13 @@
 #include "Token.hpp"
 #include <string>
+#include <iostream>
 #include <cctype>
 
 class Lexer {
 private:
     std::string source;
     size_t current;
+    bool hadError;
 
     bool isAtEnd() const {
         return current >= source.length();
@@ -23,14 +25,6 @@ private:
         return source[current];
     }
 
-    char peekNext() const {
-        if (current + 1 >= source.length()) {
-            return '\0';
-        }
-
-        return source[current + 1];
-    }
-
     void skipWhitespace() {
         while (!isAtEnd()) {
             char c = peek();
@@ -41,6 +35,14 @@ private:
                 break;
             }
         }
+    }
+
+    void reportError(const std::string& message) {
+        std::cerr << "Lexer Error at position "
+                  << current << ": "
+                  << message << std::endl;
+
+        hadError = true;
     }
 
     void scanNumber() {
@@ -61,9 +63,12 @@ private:
             advance();
         }
 
-        if (!isAtEnd()) {
-            advance();
+        if (isAtEnd()) {
+            reportError("Unterminated string.");
+            return;
         }
+
+        advance();
     }
 
     void scanToken() {
@@ -78,11 +83,22 @@ private:
         else if (c == '"') {
             scanString();
         }
+        else if (c == '+' || c == '-' ||
+                 c == '*' || c == '/' ||
+                 c == '=' || c == '<' ||
+                 c == '>' || c == '(' ||
+                 c == ')' || c == '{' ||
+                 c == '}' || c == ';') {
+            // Recognized character.
+        }
+        else {
+            reportError("Unexpected character.");
+        }
     }
 
 public:
     Lexer(const std::string& source)
-        : source(source), current(0) {
+        : source(source), current(0), hadError(false) {
     }
 
     void scan() {
@@ -96,4 +112,27 @@ public:
             scanToken();
         }
     }
+
+    bool hasError() const {
+        return hadError;
+    }
 };
+
+int main() {
+    std::string source =
+        "int number = 123;\n"
+        "print \"Hello\";";
+
+    Lexer lexer(source);
+    lexer.scan();
+
+    if (lexer.hasError()) {
+        std::cout << "Lexical analysis completed with errors."
+                  << std::endl;
+    } else {
+        std::cout << "Lexical analysis completed successfully."
+                  << std::endl;
+    }
+
+    return 0;
+}
