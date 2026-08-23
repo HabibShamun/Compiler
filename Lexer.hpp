@@ -30,4 +30,6 @@ private:
     void addToken(TokenType type, const std::string& lexeme, int line, int column);
     void addSimpleToken(TokenType type);
     void addError(const std::string& message, int line, int column);
+
+    void readNumber();
 };

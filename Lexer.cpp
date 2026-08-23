@@ -1,5 +1,6 @@
 #include "Lexer.hpp"
 
+#include <cctype>
 #include <sstream>
 
 Lexer::Lexer(std::string source) : source_(std::move(source)) {}
@@ -60,6 +61,8 @@ std::vector<Token> Lexer::tokenize() {
             addSimpleToken(TokenType::RBrace);
         } else if (ch == ';') {
             addSimpleToken(TokenType::Semicolon);
+        } else if (std::isdigit(static_cast<unsigned char>(ch))) {
+            readNumber();
         } else {
             const int line = line_;
             const int column = column_;
@@ -137,4 +140,16 @@ void Lexer::addError(const std::string& message, int line, int column) {
     std::ostringstream out;
     out << "Line " << line << ", column " << column << ": " << message;
     errors_.push_back(out.str());
+}
+
+void Lexer::readNumber() {
+    const std::size_t start = pos_;
+    const int line = line_;
+    const int column = column_;
+
+    while (std::isdigit(static_cast<unsigned char>(current()))) {
+        advance();
+    }
+
+    addToken(TokenType::Number, source_.substr(start, pos_ - start), line, column);
 }
