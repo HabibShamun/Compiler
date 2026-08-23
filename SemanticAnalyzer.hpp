@@ -43,6 +43,7 @@ private:
     std::vector<std::string> errors_;      
     
     void analyzeStmt(const Stmt& stmt);
+    void analyzeBlock(const BlockStmt& block);
     ValueType typeOf(const Expr& expr);
 
     void addError(int line, const std::string& message);   

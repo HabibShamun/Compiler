@@ -94,7 +94,46 @@ void SemanticAnalyzer::analyzeStmt(const Stmt& stmt) {
         }
         return;
     }
-}                                    
+    if (const auto* print = dynamic_cast<const PrintStmt*>(&stmt)) {     
+        typeOf(*print->value);                                        
+        return;                                                        
+    }                                                                    
+
+    if (const auto* block = dynamic_cast<const BlockStmt*>(&stmt)) {     
+        analyzeBlock(*block);                                          
+        return;                                                       
+    }                                                                
+
+    if (const auto* ifStmt = dynamic_cast<const IfStmt*>(&stmt)) {      
+        const ValueType condition = typeOf(*ifStmt->condition);      
+        if (condition != ValueType::Unknown && condition != ValueType::Bool) { 
+            addError(ifStmt->line, "If condition must be bool; use a comparison such as x > 0");  
+        }                                                                
+
+        analyzeBlock(*ifStmt->thenBranch);                          
+        if (ifStmt->elseBranch) {                                    
+            analyzeBlock(*ifStmt->elseBranch);                        
+        }                                                             
+        return;                                                        
+    }                                                                   
+
+    if (const auto* whileStmt = dynamic_cast<const WhileStmt*>(&stmt)) { /
+        const ValueType condition = typeOf(*whileStmt->condition);    
+        if (condition != ValueType::Unknown && condition != ValueType::Bool) {  
+            addError(whileStmt->line, "While condition must be bool; use a comparison such as x > 0"); 
+        }                                                               
+
+        analyzeBlock(*whileStmt->body);                                
+    }                 
+}              
+
+void SemanticAnalyzer::analyzeBlock(const BlockStmt& block) {
+    symbols_.enterScope();
+    for (const auto& stmt : block.statements) {
+        analyzeStmt(*stmt);
+    }
+    symbols_.exitScope();
+}
 
 ValueType SemanticAnalyzer::typeOf(const Expr& expr) {    
     if (dynamic_cast<const NumberExpr*>(&expr)) {
