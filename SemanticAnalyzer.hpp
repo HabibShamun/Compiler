@@ -40,7 +40,10 @@ public:
 
 private:
     SymbolTable symbols_;                                   
-    std::vector<std::string> errors_;                       
+    std::vector<std::string> errors_;      
+    
+    void analyzeStmt(const Stmt& stmt);
+    ValueType typeOf(const Expr& expr);
 
     void addError(int line, const std::string& message);   
 };
