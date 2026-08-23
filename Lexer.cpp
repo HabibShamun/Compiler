@@ -20,6 +20,36 @@ std::vector<Token> Lexer::tokenize() {
             addSimpleToken(TokenType::Star);
         } else if (ch == '/') {
             addSimpleToken(TokenType::Slash);
+        } else if (ch == '=') {
+            const int line = line_;
+            const int column = column_;
+            advance();
+            const bool hasEqual = match('=');
+            addToken(hasEqual ? TokenType::EqualEqual : TokenType::Equal,
+                     hasEqual ? "==" : "=", line, column);
+        } else if (ch == '!') {
+            const int line = line_;
+            const int column = column_;
+            advance();
+            if (match('=')) {
+                addToken(TokenType::BangEqual, "!=", line, column);
+            } else {
+                addError("Unexpected character '!'. Did you mean '!='?", line, column);
+            }
+        } else if (ch == '<') {
+            const int line = line_;
+            const int column = column_;
+            advance();
+            const bool hasEqual = match('=');
+            addToken(hasEqual ? TokenType::LessEqual : TokenType::Less,
+                     hasEqual ? "<=" : "<", line, column);
+        } else if (ch == '>') {
+            const int line = line_;
+            const int column = column_;
+            advance();
+            const bool hasEqual = match('=');
+            addToken(hasEqual ? TokenType::GreaterEqual : TokenType::Greater,
+                     hasEqual ? ">=" : ">", line, column);
         } else if (ch == '(') {
             addSimpleToken(TokenType::LParen);
         } else if (ch == ')') {
