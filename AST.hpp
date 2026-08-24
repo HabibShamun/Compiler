@@ -95,3 +95,65 @@ struct BinaryExpr final : Expr {
     BinaryOp op;
     ExprPtr right;
 };
+
+struct Stmt {
+    explicit Stmt(int line) : line(line) {}
+    virtual ~Stmt() = default;
+
+    int line;
+};
+
+using StmtPtr = std::unique_ptr<Stmt>;
+
+struct VarDeclStmt final : Stmt {
+    VarDeclStmt(ValueType declaredType, std::string name, ExprPtr initializer, int line)
+        : Stmt(line),
+          declaredType(declaredType),
+          name(std::move(name)),
+          initializer(std::move(initializer)) {}
+
+    ValueType declaredType;
+    std::string name;
+    ExprPtr initializer;
+};
+
+struct AssignStmt final : Stmt {
+    AssignStmt(std::string name, ExprPtr value, int line)
+        : Stmt(line), name(std::move(name)), value(std::move(value)) {}
+
+    std::string name;
+    ExprPtr value;
+};
+
+struct PrintStmt final : Stmt {
+    PrintStmt(ExprPtr value, int line) : Stmt(line), value(std::move(value)) {}
+
+    ExprPtr value;
+};
+
+struct BlockStmt final : Stmt {
+    explicit BlockStmt(int line) : Stmt(line) {}
+
+    std::vector<StmtPtr> statements;
+};
+
+struct IfStmt final : Stmt {
+    IfStmt(ExprPtr condition, std::unique_ptr<BlockStmt> thenBranch,
+           std::unique_ptr<BlockStmt> elseBranch, int line)
+        : Stmt(line),
+          condition(std::move(condition)),
+          thenBranch(std::move(thenBranch)),
+          elseBranch(std::move(elseBranch)) {}
+
+    ExprPtr condition;
+    std::unique_ptr<BlockStmt> thenBranch;
+    std::unique_ptr<BlockStmt> elseBranch;
+};
+
+struct WhileStmt final : Stmt {
+    WhileStmt(ExprPtr condition, std::unique_ptr<BlockStmt> body, int line)
+        : Stmt(line), condition(std::move(condition)), body(std::move(body)) {}
+
+    ExprPtr condition;
+    std::unique_ptr<BlockStmt> body;
+};
