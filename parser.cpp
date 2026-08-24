@@ -1,7 +1,6 @@
 #include "Parser.hpp"
 
 #include <sstream>
-#include <utility>
 
 Parser::Parser(std::vector<Token> tokens) : tokens_(std::move(tokens)) {}
 
@@ -85,8 +84,8 @@ const Token& Parser::expect(TokenType type, const std::string& message) {
 
 void Parser::errorAt(const Token& token, const std::string& message) {
     std::ostringstream out;
-    out << "Line " << token.line << ", column " << token.column << ": "
-        << message << " near '" << token.lexeme << "'";
+    out << "Line " << token.line << ", column " << token.column << ": " << message
+        << " near '" << token.lexeme << "'";
     errors_.push_back(out.str());
 }
 
@@ -95,6 +94,11 @@ void Parser::synchronize() {
         if (matchAny({TokenType::Semicolon, TokenType::Newline})) {
             return;
         }
+
+        if (check(TokenType::RBrace)) {
+            return;
+        }
+
         advance();
     }
 }
@@ -110,7 +114,7 @@ void Parser::consumeStatementEnd(const std::string& context) {
         return;
     }
 
-    if (check(TokenType::EndOfFile)) {
+    if (check(TokenType::RBrace) || check(TokenType::EndOfFile)) {
         return;
     }
 
@@ -149,8 +153,20 @@ StmtPtr Parser::parseStatement() {
         return parsePrint();
     }
 
-    errorAt(current(), "Expected declaration, assignment, or print statement");
-    throw ParseError("expected simple statement");
+    if (check(TokenType::KwIf)) {
+        return parseIf();
+    }
+
+    if (check(TokenType::KwWhile)) {
+        return parseWhile();
+    }
+
+    if (check(TokenType::LBrace)) {
+        return parseBlock("block");
+    }
+
+    errorAt(current(), "Expected declaration or statement");
+    throw ParseError("expected declaration or statement");
 }
 
 StmtPtr Parser::parseAssignment() {
@@ -166,6 +182,48 @@ StmtPtr Parser::parsePrint() {
     ExprPtr value = parseExpression();
     consumeStatementEnd("print statement");
     return std::make_unique<PrintStmt>(std::move(value), keyword.line);
+}
+
+StmtPtr Parser::parseIf() {
+    const Token keyword = advance();
+    ExprPtr condition = parseExpression();
+    auto thenBranch = parseBlock("if statement");
+
+    consumeTerminators();
+    std::unique_ptr<BlockStmt> elseBranch;
+    if (match(TokenType::KwElse)) {
+        elseBranch = parseBlock("else statement");
+    }
+
+    return std::make_unique<IfStmt>(std::move(condition), std::move(thenBranch),
+                                    std::move(elseBranch), keyword.line);
+}
+
+StmtPtr Parser::parseWhile() {
+    const Token keyword = advance();
+    ExprPtr condition = parseExpression();
+    auto body = parseBlock("while statement");
+    return std::make_unique<WhileStmt>(std::move(condition), std::move(body), keyword.line);
+}
+
+std::unique_ptr<BlockStmt> Parser::parseBlock(const std::string& owner) {
+    const Token brace = expect(TokenType::LBrace, "Expected '{' before " + owner + " body");
+    auto block = std::make_unique<BlockStmt>(brace.line);
+
+    consumeTerminators();
+    while (!check(TokenType::RBrace) && !isAtEnd()) {
+        try {
+            if (auto stmt = parseDeclarationOrStatement()) {
+                block->statements.push_back(std::move(stmt));
+            }
+        } catch (const ParseError&) {
+            synchronize();
+        }
+        consumeTerminators();
+    }
+
+    expect(TokenType::RBrace, "Expected '}' after " + owner + " body");
+    return block;
 }
 
 ExprPtr Parser::parseExpression() {
@@ -290,4 +348,3 @@ BinaryOp Parser::binaryOpFromToken(TokenType type) {
         default: return BinaryOp::Equal;
     }
 }
-
