@@ -12,5 +12,17 @@ enum class TokenType {
     KwPrint,
     KwIf,
     KwElse,
-    KwWhile
+    KwWhile,
+
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    Equal,
+    EqualEqual,
+    BangEqual,
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual
 };
