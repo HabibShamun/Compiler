@@ -5,5 +5,12 @@
 enum class TokenType {
     Number,
     String,
-    Identifier
+    Identifier,
+
+    KwInt,
+    KwString,
+    KwPrint,
+    KwIf,
+    KwElse,
+    KwWhile
 };
