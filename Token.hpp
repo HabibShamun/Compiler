@@ -24,5 +24,14 @@ enum class TokenType {
     Less,
     LessEqual,
     Greater,
-    GreaterEqual
+    GreaterEqual,
+
+    LParen,
+    RParen,
+    LBrace,
+    RBrace,
+    Semicolon,
+    Newline,
+    EndOfFile,
+    Unknown
 };
