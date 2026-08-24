@@ -21,3 +21,33 @@ inline const char* valueTypeName(ValueType type) {
 
     return "unknown";
 }
+
+enum class BinaryOp {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Equal,
+    NotEqual,
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual
+};
+
+inline const char* binaryOpName(BinaryOp op) {
+    switch (op) {
+        case BinaryOp::Add: return "+";
+        case BinaryOp::Subtract: return "-";
+        case BinaryOp::Multiply: return "*";
+        case BinaryOp::Divide: return "/";
+        case BinaryOp::Equal: return "==";
+        case BinaryOp::NotEqual: return "!=";
+        case BinaryOp::Less: return "<";
+        case BinaryOp::LessEqual: return "<=";
+        case BinaryOp::Greater: return ">";
+        case BinaryOp::GreaterEqual: return ">=";
+    }
+
+    return "?";
+}
