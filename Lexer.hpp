@@ -33,4 +33,9 @@ private:
 
     void readNumber();
     void readString();
+    void readIdentifierOrKeyword();
+
+    static bool isIdentifierStart(unsigned char ch);
+    static bool isIdentifierPart(unsigned char ch);
+    static bool isDelimiter(unsigned char ch);
 };

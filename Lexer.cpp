@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <sstream>
+#include <unordered_map>
 
 Lexer::Lexer(std::string source) : source_(std::move(source)) {}
 
@@ -65,6 +66,8 @@ std::vector<Token> Lexer::tokenize() {
             readString();
         } else if (std::isdigit(static_cast<unsigned char>(ch))) {
             readNumber();
+        } else if (isIdentifierStart(static_cast<unsigned char>(ch))) {
+            readIdentifierOrKeyword();
         } else {
             const int line = line_;
             const int column = column_;
@@ -196,4 +199,67 @@ void Lexer::readString() {
 
     advance();
     addToken(TokenType::String, value, line, column);
+}
+
+void Lexer::readIdentifierOrKeyword() {
+    static const std::unordered_map<std::string, TokenType> keywords = {
+        {"shonkha", TokenType::KwInt},
+        {"সংখ্যা", TokenType::KwInt},
+        {"lekha", TokenType::KwString},
+        {"লেখা", TokenType::KwString},
+        {"dekhao", TokenType::KwPrint},
+        {"দেখাও", TokenType::KwPrint},
+        {"jodi", TokenType::KwIf},
+        {"যদি", TokenType::KwIf},
+        {"nahole", TokenType::KwElse},
+        {"নাহলে", TokenType::KwElse},
+        {"jotokhon", TokenType::KwWhile},
+        {"যতক্ষণ", TokenType::KwWhile},
+    };
+
+    const std::size_t start = pos_;
+    const int line = line_;
+    const int column = column_;
+
+    while (!isAtEnd() && isIdentifierPart(static_cast<unsigned char>(current()))) {
+        advance();
+    }
+
+    const std::string lexeme = source_.substr(start, pos_ - start);
+    const auto found = keywords.find(lexeme);
+    addToken(found == keywords.end() ? TokenType::Identifier : found->second, lexeme, line, column);
+}
+
+bool Lexer::isIdentifierStart(unsigned char ch) {
+    return std::isalpha(ch) || ch == '_' || ch >= 128;
+}
+
+bool Lexer::isIdentifierPart(unsigned char ch) {
+    return std::isalnum(ch) || ch == '_' || (ch >= 128 && !isDelimiter(ch));
+}
+
+bool Lexer::isDelimiter(unsigned char ch) {
+    switch (ch) {
+        case ' ':
+        case '\t':
+        case '\r':
+        case '\n':
+        case '+':
+        case '-':
+        case '*':
+        case '/':
+        case '=':
+        case '!':
+        case '<':
+        case '>':
+        case '(':
+        case ')':
+        case '{':
+        case '}':
+        case ';':
+        case '"':
+            return true;
+        default:
+            return false;
+    }
 }
