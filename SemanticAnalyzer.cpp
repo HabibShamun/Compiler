@@ -154,6 +154,55 @@ ValueType SemanticAnalyzer::typeOf(const Expr& expr) {
         return symbol->type;
     }
 
+    if (const auto* unary = dynamic_cast<const UnaryExpr*>(&expr)) {        
+        const ValueType inner = typeOf(*unary->expr);                     
+        if (unary->op == "-" && inner != ValueType::Unknown && inner != ValueType::Int) { 
+            addError(unary->line, "Unary '-' requires a shonkha value");    
+            return ValueType::Unknown;                                    
+        }                                                                   
+
+        return inner;                                                    
+    }                                                                        
+
+    if (const auto* binary = dynamic_cast<const BinaryExpr*>(&expr)) {      
+        const ValueType left = typeOf(*binary->left);                      
+        const ValueType right = typeOf(*binary->right);                    
+
+        if (left == ValueType::Unknown || right == ValueType::Unknown) {   
+            return ValueType::Unknown;                                    
+        }                                                                    
+
+        if (isComparison(binary->op)) {                                   
+            if (binary->op == BinaryOp::Equal || binary->op == BinaryOp::NotEqual) {  
+                if (left != right) {                                     
+                    addError(binary->line, "Equality comparison requires both sides to have the same type");  
+                    return ValueType::Unknown;                            
+                }                                                        
+                return ValueType::Bool;                                   
+            }                                                               
+
+            if (left != ValueType::Int || right != ValueType::Int) {       
+                addError(binary->line, "Ordering comparison requires shonkha values");  
+                return ValueType::Unknown;                                
+            }                                                               
+
+            return ValueType::Bool;                                         
+        }                                                                    
+
+        if (binary->op == BinaryOp::Add && left == ValueType::String && right == ValueType::String) {  
+            return ValueType::String;                                    
+        }                                                                  
+
+        if (left == ValueType::Int && right == ValueType::Int) {           
+            return ValueType::Int;                                      
+        }                                                                    
+
+        addError(binary->line, "Operator '" + std::string(binaryOpName(binary->op)) +  
+                               "' does not support " + valueTypeName(left) +           
+                               " and " + valueTypeName(right));                   
+        return ValueType::Unknown;                                       
+    }    
+
     return ValueType::Unknown;
 }             
 
@@ -161,4 +210,10 @@ void SemanticAnalyzer::addError(int line, const std::string& message) {
     std::ostringstream out;
     out << "Line " << line << ": " << message;
     errors_.push_back(out.str());
+}
+
+bool SemanticAnalyzer::isComparison(BinaryOp op) {          // ADDED: entire function
+    return op == BinaryOp::Equal || op == BinaryOp::NotEqual ||
+           op == BinaryOp::Less || op == BinaryOp::LessEqual ||
+           op == BinaryOp::Greater || op == BinaryOp::GreaterEqual;
 }

@@ -47,4 +47,5 @@ private:
     ValueType typeOf(const Expr& expr);
 
     void addError(int line, const std::string& message);   
+    static bool isComparison(BinaryOp op);
 };
