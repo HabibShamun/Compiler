@@ -3,7 +3,6 @@
 #include "AST.hpp"
 #include "Token.hpp"
 
-#include <initializer_list>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -43,6 +42,9 @@ private:
     StmtPtr parseStatement();
     StmtPtr parseAssignment();
     StmtPtr parsePrint();
+    StmtPtr parseIf();
+    StmtPtr parseWhile();
+    std::unique_ptr<BlockStmt> parseBlock(const std::string& owner);
 
     ExprPtr parseExpression();
     ExprPtr parseEquality();
@@ -56,4 +58,3 @@ private:
     static ValueType typeFromToken(TokenType type);
     static BinaryOp binaryOpFromToken(TokenType type);
 };
-
