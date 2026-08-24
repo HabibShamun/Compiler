@@ -157,3 +157,7 @@ struct WhileStmt final : Stmt {
     ExprPtr condition;
     std::unique_ptr<BlockStmt> body;
 };
+
+struct Program {
+    std::vector<StmtPtr> statements;
+};
