@@ -34,8 +34,11 @@ private:
     void readNumber();
     void readString();
     void readIdentifierOrKeyword();
+    void skipLineComment();
 
     static bool isIdentifierStart(unsigned char ch);
     static bool isIdentifierPart(unsigned char ch);
     static bool isDelimiter(unsigned char ch);
+    bool isBengaliDigitStart() const;
+    int bengaliDigitValue() const;
 };
