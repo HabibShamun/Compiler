@@ -14,6 +14,8 @@ std::vector<Token> Lexer::tokenize() {
             advance();
         } else if (ch == '\n') {
             addSimpleToken(TokenType::Newline);
+        } else if (ch == '/' && peek() == '/') {
+            skipLineComment();
         } else if (ch == '+') {
             addSimpleToken(TokenType::Plus);
         } else if (ch == '-') {
@@ -64,7 +66,7 @@ std::vector<Token> Lexer::tokenize() {
             addSimpleToken(TokenType::Semicolon);
         } else if (ch == '"') {
             readString();
-        } else if (std::isdigit(static_cast<unsigned char>(ch))) {
+        } else if (std::isdigit(static_cast<unsigned char>(ch)) || isBengaliDigitStart()) {
             readNumber();
         } else if (isIdentifierStart(static_cast<unsigned char>(ch))) {
             readIdentifierOrKeyword();
@@ -148,15 +150,24 @@ void Lexer::addError(const std::string& message, int line, int column) {
 }
 
 void Lexer::readNumber() {
-    const std::size_t start = pos_;
     const int line = line_;
     const int column = column_;
+    std::string normalized;
 
-    while (std::isdigit(static_cast<unsigned char>(current()))) {
-        advance();
+    while (!isAtEnd()) {
+        if (std::isdigit(static_cast<unsigned char>(current()))) {
+            normalized += advance();
+        } else if (isBengaliDigitStart()) {
+            normalized += static_cast<char>('0' + bengaliDigitValue());
+            advance();
+            advance();
+            advance();
+        } else {
+            break;
+        }
     }
 
-    addToken(TokenType::Number, source_.substr(start, pos_ - start), line, column);
+    addToken(TokenType::Number, normalized, line, column);
 }
 
 void Lexer::readString() {
@@ -230,6 +241,12 @@ void Lexer::readIdentifierOrKeyword() {
     addToken(found == keywords.end() ? TokenType::Identifier : found->second, lexeme, line, column);
 }
 
+void Lexer::skipLineComment() {
+    while (!isAtEnd() && current() != '\n') {
+        advance();
+    }
+}
+
 bool Lexer::isIdentifierStart(unsigned char ch) {
     return std::isalpha(ch) || ch == '_' || ch >= 128;
 }
@@ -262,4 +279,15 @@ bool Lexer::isDelimiter(unsigned char ch) {
         default:
             return false;
     }
+}
+
+bool Lexer::isBengaliDigitStart() const {
+    const unsigned char first = static_cast<unsigned char>(current());
+    const unsigned char second = static_cast<unsigned char>(peek());
+    const unsigned char third = static_cast<unsigned char>(peekNext());
+    return first == 0xE0 && second == 0xA7 && third >= 0xA6 && third <= 0xAF;
+}
+
+int Lexer::bengaliDigitValue() const {
+    return static_cast<unsigned char>(peekNext()) - 0xA6;
 }
