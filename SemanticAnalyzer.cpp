@@ -2,8 +2,6 @@
 
 #include <sstream>
 
-using namespace std;
-
 SymbolTable::SymbolTable() {
     enterScope();
 }
@@ -18,7 +16,7 @@ void SymbolTable::exitScope() {
     }
 }
 
-bool SymbolTable::declare(const string& name, ValueType type, int line) {
+bool SymbolTable::declare(const std::string& name, ValueType type, int line) {
     if (existsInCurrentScope(name)) {
         return false;
     }
@@ -29,7 +27,7 @@ bool SymbolTable::declare(const string& name, ValueType type, int line) {
     return true;
 }
 
-optional<Symbol> SymbolTable::lookup(const string& name) const {
+std::optional<Symbol> SymbolTable::lookup(const std::string& name) const {
     for (auto scope = scopes_.rbegin(); scope != scopes_.rend(); ++scope) {
         const auto found = scope->find(name);
         if (found != scope->end()) {
@@ -37,14 +35,14 @@ optional<Symbol> SymbolTable::lookup(const string& name) const {
         }
     }
 
-    return nullopt;
+    return std::nullopt;
 }
 
-bool SymbolTable::existsInCurrentScope(const string& name) const {
+bool SymbolTable::existsInCurrentScope(const std::string& name) const {
     return !scopes_.empty() && scopes_.back().count(name) > 0;
 }
 
-const vector<Symbol>& SymbolTable::declarations() const {
+const std::vector<Symbol>& SymbolTable::declarations() const {
     return declarations_;
 }
 
@@ -54,7 +52,7 @@ void SemanticAnalyzer::analyze(const Program& program) {
     }
 }
 
-const vector<string>& SemanticAnalyzer::errors() const {
+const std::vector<std::string>& SemanticAnalyzer::errors() const {
     return errors_;
 }
 
@@ -71,7 +69,7 @@ void SemanticAnalyzer::analyzeStmt(const Stmt& stmt) {
         if (varDecl->initializer) {
             const ValueType actual = typeOf(*varDecl->initializer);
             if (actual != ValueType::Unknown && actual != varDecl->declaredType) {
-                addError(varDecl->line, "Cannot assign " + string(valueTypeName(actual)) +
+                addError(varDecl->line, "Cannot assign " + std::string(valueTypeName(actual)) +
                                            " value to " + valueTypeName(varDecl->declaredType) +
                                            " variable '" + varDecl->name + "'");
             }
@@ -89,7 +87,7 @@ void SemanticAnalyzer::analyzeStmt(const Stmt& stmt) {
 
         const ValueType actual = typeOf(*assign->value);
         if (actual != ValueType::Unknown && actual != symbol->type) {
-            addError(assign->line, "Cannot assign " + string(valueTypeName(actual)) +
+            addError(assign->line, "Cannot assign " + std::string(valueTypeName(actual)) +
                                        " value to " + valueTypeName(symbol->type) +
                                        " variable '" + assign->name + "'");
         }
@@ -170,6 +168,14 @@ ValueType SemanticAnalyzer::typeOf(const Expr& expr) {
         const ValueType left = typeOf(*binary->left);
         const ValueType right = typeOf(*binary->right);
 
+        if (binary->op == BinaryOp::Divide) {
+            if (const auto* divisor = dynamic_cast<const NumberExpr*>(binary->right.get())) {
+                if (divisor->value == 0) {
+                    addError(binary->line, "Division by zero is not allowed");
+                }
+            }
+        }
+
         if (left == ValueType::Unknown || right == ValueType::Unknown) {
             return ValueType::Unknown;
         }
@@ -199,7 +205,7 @@ ValueType SemanticAnalyzer::typeOf(const Expr& expr) {
             return ValueType::Int;
         }
 
-        addError(binary->line, "Operator '" + string(binaryOpName(binary->op)) +
+        addError(binary->line, "Operator '" + std::string(binaryOpName(binary->op)) +
                                "' does not support " + valueTypeName(left) +
                                " and " + valueTypeName(right));
         return ValueType::Unknown;
@@ -208,8 +214,8 @@ ValueType SemanticAnalyzer::typeOf(const Expr& expr) {
     return ValueType::Unknown;
 }
 
-void SemanticAnalyzer::addError(int line, const string& message) {
-    ostringstream out;
+void SemanticAnalyzer::addError(int line, const std::string& message) {
+    std::ostringstream out;
     out << "Line " << line << ": " << message;
     errors_.push_back(out.str());
 }
