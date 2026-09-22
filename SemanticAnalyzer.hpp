@@ -31,21 +31,21 @@ private:
     std::vector<Symbol> declarations_;
 };
 
-class SemanticAnalyzer {                                  
+class SemanticAnalyzer {
 public:
-    void analyze(const Program& program);                 
+    void analyze(const Program& program);
 
-    const std::vector<std::string>& errors() const;       
-    const SymbolTable& symbols() const;                    
+    const std::vector<std::string>& errors() const;
+    const SymbolTable& symbols() const;
 
 private:
-    SymbolTable symbols_;                                   
-    std::vector<std::string> errors_;      
-    
+    SymbolTable symbols_;
+    std::vector<std::string> errors_;
+
     void analyzeStmt(const Stmt& stmt);
     void analyzeBlock(const BlockStmt& block);
     ValueType typeOf(const Expr& expr);
 
-    void addError(int line, const std::string& message);   
+    void addError(int line, const std::string& message);
     static bool isComparison(BinaryOp op);
 };
