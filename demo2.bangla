@@ -1,0 +1,10 @@
+shonkha boyos = 18
+lekha naam = "Rafi"
+
+dekhao naam
+
+jodi boyos > 18 {
+    dekhao boyos
+} nahole {
+    dekhao "অপ্রাপ্তবয়স্ক"
+}
